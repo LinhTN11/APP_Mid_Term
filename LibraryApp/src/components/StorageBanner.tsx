@@ -3,9 +3,9 @@ import {StyleSheet, Text, View} from 'react-native';
 import {colors, radius, spacing} from '../theme';
 import AppButton from './AppButton';
 
-type Props = {error: string | null; saving: boolean; onRetry: () => void};
+type Props = {error: string | null; saving: boolean; onRetry: () => void; reserveSpace?: boolean};
 
-export default function StorageBanner({error, saving, onRetry}: Props) {
+export default function StorageBanner({error, saving, onRetry, reserveSpace = false}: Props) {
   if (error) {
     return (
       <View accessibilityRole="alert" style={styles.errorBox} testID="storage-error-banner">
@@ -15,8 +15,18 @@ export default function StorageBanner({error, saving, onRetry}: Props) {
       </View>
     );
   }
-  if (saving) {
-    return <View accessibilityLiveRegion="polite" style={styles.savingBox}><Text style={styles.savingText}>Đang lưu thay đổi…</Text></View>;
+  if (saving || reserveSpace) {
+    return (
+      <View
+        testID="storage-saving-banner"
+        accessibilityLiveRegion={saving ? 'polite' : 'none'}
+        accessibilityElementsHidden={!saving}
+        importantForAccessibility={saving ? 'auto' : 'no-hide-descendants'}
+        pointerEvents="none"
+        style={[styles.savingBox, !saving && styles.hidden]}>
+        <Text style={styles.savingText}>Đang lưu thay đổi…</Text>
+      </View>
+    );
   }
   return null;
 }
@@ -28,4 +38,5 @@ const styles = StyleSheet.create({
   retry: {alignSelf: 'flex-start', minHeight: 40, paddingHorizontal: spacing.sm},
   savingBox: {backgroundColor: '#E8EFEA', borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm},
   savingText: {color: colors.primary, fontSize: 12, fontWeight: '600'},
+  hidden: {opacity: 0},
 });

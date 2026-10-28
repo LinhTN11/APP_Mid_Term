@@ -177,6 +177,44 @@ test('detail disables actions at both borrowing boundaries', async () => {
   ReactTestRenderer.act(() => available.unmount());
 });
 
+test('borrowing and returning keep the detail content layout stable during pending storage writes', async () => {
+  storage.getItem.mockResolvedValue(JSON.stringify([
+    {id: 'stable-book', title: 'Sách ổn định', author: 'A', category: 'Khoa học', year: 2020, quantity: 2, borrowed: 0},
+  ]));
+  let finishWrite!: () => void;
+  storage.setItem.mockImplementation(() => new Promise<void>(resolve => { finishWrite = resolve; }));
+  const tree = await renderScreen(<BookDetailScreen navigation={navigation as never} route={{key: 'detail', name: 'BookDetail', params: {bookId: 'stable-book'}} as never} />);
+  const layoutTree = (node: ReactTestRenderer.ReactTestRendererJSON): unknown[] => [
+    node.type,
+    (node.children ?? []).map(child => typeof child === 'string' ? 'text' : layoutTree(child)),
+  ];
+  const contentLayout = () => {
+    const screen = tree.toJSON() as ReactTestRenderer.ReactTestRendererJSON;
+    const scroll = screen.children!.find(child => typeof child !== 'string' && child.type === 'RCTScrollView') as ReactTestRenderer.ReactTestRendererJSON;
+    const content = scroll.children![0] as ReactTestRenderer.ReactTestRendererJSON;
+    return layoutTree(content);
+  };
+  const idleLayout = contentLayout();
+  for (const [action, borrowed] of [
+    ['lend-book-button', 1],
+    ['lend-book-button', 2],
+    ['return-book-button', 1],
+    ['return-book-button', 0],
+  ] as const) {
+    await ReactTestRenderer.act(async () => {
+      tree.root.findByProps({testID: action}).props.onPress();
+      await Promise.resolve();
+    });
+    expect(contentLayout()).toEqual(idleLayout);
+    expect(JSON.parse(storage.setItem.mock.calls.at(-1)![1])[0].borrowed).toBe(borrowed);
+    expect(tree.root.findByProps({testID: 'return-book-button'}).props.disabled).toBe(borrowed === 0);
+    expect(tree.root.findByProps({testID: 'lend-book-button'}).props.disabled).toBe(borrowed === 2);
+    await ReactTestRenderer.act(async () => { finishWrite(); await Promise.resolve(); });
+    expect(contentLayout()).toEqual(idleLayout);
+  }
+  ReactTestRenderer.act(() => tree.unmount());
+});
+
 test('real detail screen shows a storage write error and retry saves the latest provider snapshot', async () => {
   storage.getItem.mockResolvedValue(JSON.stringify([
     {id: 'retry-book', title: 'Sách thử lại', author: 'Tác giả', category: 'Khoa học', year: 2020, quantity: 3, borrowed: 0},

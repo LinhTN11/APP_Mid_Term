@@ -45,7 +45,7 @@ export default function BookDetailScreen({navigation, route}: Props) {
   return (
     <SafeAreaView style={styles.screen} edges={['left', 'right']}>
       <ScrollView contentContainerStyle={[styles.content, {paddingBottom: Math.max(insets.bottom, spacing.lg)}]} showsVerticalScrollIndicator={false}>
-        <StorageBanner error={error} saving={saving} onRetry={retry} />
+        <StorageBanner error={error} saving={saving} onRetry={retry} reserveSpace />
         <Text style={styles.eyebrow}>{book.category.toLocaleUpperCase('vi')}</Text>
         <Text style={styles.title}>{book.title}</Text>
         <Text style={styles.author}>Tác giả · {book.author}</Text>
@@ -55,7 +55,12 @@ export default function BookDetailScreen({navigation, route}: Props) {
           <View style={styles.availabilityRow}>
             <Text style={styles.remaining}>{remaining}</Text>
             <Text style={styles.ofTotal}>/ {book.quantity} cuốn</Text>
-            {remaining === 0 ? <Text style={styles.outBadge}>Hết sách</Text> : null}
+            <Text
+              style={[styles.outBadge, remaining > 0 && styles.hiddenBadge]}
+              accessibilityElementsHidden={remaining > 0}
+              importantForAccessibility={remaining > 0 ? 'no-hide-descendants' : 'auto'}>
+              Hết sách
+            </Text>
           </View>
           <View style={styles.progressTrack}><View style={[styles.progressFill, {width: `${Math.max(0, Math.min(100, (remaining / book.quantity) * 100))}%`}]} /></View>
           <Text style={styles.borrowedNote}>Đang được mượn: {book.borrowed} cuốn</Text>
@@ -125,6 +130,7 @@ const styles = StyleSheet.create({
   remaining: {color: colors.surface, fontSize: 42, lineHeight: 48, fontWeight: '800'},
   ofTotal: {color: '#E1E9E3', fontSize: 14},
   outBadge: {color: '#FFE4DB', backgroundColor: '#754234', fontSize: 11, fontWeight: '700', overflow: 'hidden', borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs},
+  hiddenBadge: {opacity: 0},
   progressTrack: {height: 5, backgroundColor: '#587563', borderRadius: radius.pill, marginTop: spacing.md},
   progressFill: {height: 5, borderRadius: radius.pill, backgroundColor: '#E7B59E'},
   borrowedNote: {color: '#D9E3DC', fontSize: 12, marginTop: spacing.sm},
