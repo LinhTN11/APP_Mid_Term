@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -14,6 +14,14 @@ import {colors, spacing} from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BookForm'>;
 
+export function calculateKeyboardVerticalOffset(
+  measuredWindowY: number,
+  topInset: number,
+  platform: typeof Platform.OS,
+): number {
+  return Math.round(measuredWindowY + (platform === 'android' ? topInset : 0));
+}
+
 function emptyInput(): BookInput {
   return {title: '', author: '', category: CATEGORIES[0], year: '', quantity: '1'};
 }
@@ -22,6 +30,7 @@ export default function BookFormScreen({navigation, route}: Props) {
   const {books, loading, error, saving, retry, addBook, editBook} = useLibrary();
   const insets = useSafeAreaInsets();
   const formRootRef = useRef<React.ElementRef<typeof SafeAreaView>>(null);
+  const formScrollRef = useRef<ScrollView>(null);
   const [keyboardVerticalOffset, setKeyboardVerticalOffset] = useState(0);
   const bookId = route.params?.bookId;
   const book = bookId ? books.find(item => item.id === bookId) : undefined;
@@ -40,13 +49,43 @@ export default function BookFormScreen({navigation, route}: Props) {
   const exitPendingRef = useRef(false);
   const exitScheduledRef = useRef(false);
   const keyboardHideSubscriptionRef = useRef<ReturnType<typeof Keyboard.addListener> | null>(null);
+  const keyboardShowSubscriptionRef = useRef<ReturnType<typeof Keyboard.addListener> | null>(null);
   const keyboardExitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const exitFrameRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const numericFieldFocusedRef = useRef(false);
+  const numericScrollFrameRef = useRef<number | null>(null);
+
+  const ensureNumericFieldsVisible = useCallback(() => {
+    if (!numericFieldFocusedRef.current) {
+      return;
+    }
+    if (numericScrollFrameRef.current !== null) {
+      cancelAnimationFrame(numericScrollFrameRef.current);
+    }
+    numericScrollFrameRef.current = requestAnimationFrame(() => {
+      numericScrollFrameRef.current = null;
+      if (numericFieldFocusedRef.current) {
+        formScrollRef.current?.scrollToEnd({animated: true});
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    keyboardShowSubscriptionRef.current = Keyboard.addListener('keyboardDidShow', ensureNumericFieldsVisible);
+    return () => {
+      keyboardShowSubscriptionRef.current?.remove();
+      keyboardShowSubscriptionRef.current = null;
+    };
+  }, [ensureNumericFieldsVisible]);
 
   useEffect(() => () => {
     exitPendingRef.current = false;
     keyboardHideSubscriptionRef.current?.remove();
     keyboardHideSubscriptionRef.current = null;
+    if (numericScrollFrameRef.current !== null) {
+      cancelAnimationFrame(numericScrollFrameRef.current);
+      numericScrollFrameRef.current = null;
+    }
     if (keyboardExitTimeoutRef.current) {
       clearTimeout(keyboardExitTimeoutRef.current);
     }
@@ -75,12 +114,16 @@ export default function BookFormScreen({navigation, route}: Props) {
     }, 0);
   };
 
-  const updateKeyboardOffset = () => {
+  const updateKeyboardOffset = useCallback(() => {
     formRootRef.current?.measureInWindow((_x, y) => {
-      const measuredOffset = Math.round(y);
+      const measuredOffset = calculateKeyboardVerticalOffset(y, insets.top, Platform.OS);
       setKeyboardVerticalOffset(current => current === measuredOffset ? current : measuredOffset);
     });
-  };
+  }, [insets.top]);
+
+  useEffect(() => {
+    updateKeyboardOffset();
+  }, [updateKeyboardOffset]);
 
   const dismissKeyboardThenGoBack = () => {
     if (exitPendingRef.current) {
@@ -156,6 +199,9 @@ export default function BookFormScreen({navigation, route}: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={keyboardVerticalOffset}>
         <ScrollView
+          ref={formScrollRef}
+          testID="book-form-scroll"
+          onLayout={ensureNumericFieldsVisible}
           contentContainerStyle={[styles.content, {paddingBottom: Math.max(insets.bottom, spacing.xl)}]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
@@ -197,6 +243,8 @@ export default function BookFormScreen({navigation, route}: Props) {
                 placeholder="2020"
                 keyboardType="number-pad"
                 returnKeyType="next"
+                onFocus={() => {numericFieldFocusedRef.current = true; ensureNumericFieldsVisible();}}
+                onBlur={() => {numericFieldFocusedRef.current = false;}}
               />
             </View>
             <View style={styles.numberField}>
@@ -209,6 +257,8 @@ export default function BookFormScreen({navigation, route}: Props) {
                 placeholder="1"
                 keyboardType="number-pad"
                 returnKeyType="done"
+                onFocus={() => {numericFieldFocusedRef.current = true; ensureNumericFieldsVisible();}}
+                onBlur={() => {numericFieldFocusedRef.current = false;}}
               />
             </View>
           </View>

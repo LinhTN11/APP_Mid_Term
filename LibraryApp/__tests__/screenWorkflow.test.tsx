@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
-import {Alert, Keyboard, KeyboardAvoidingView, Platform, TextInput} from 'react-native';
+import {Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, TextInput} from 'react-native';
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: {getItem: jest.fn(), setItem: jest.fn()},
@@ -8,7 +8,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BookListScreen from '../src/screens/BookListScreen';
 import BookDetailScreen from '../src/screens/BookDetailScreen';
-import BookFormScreen from '../src/screens/BookFormScreen';
+import BookFormScreen, {calculateKeyboardVerticalOffset} from '../src/screens/BookFormScreen';
 import {LibraryProvider} from '../src/state/LibraryContext';
 
 jest.mock('react-native-safe-area-context', () => {
@@ -16,13 +16,13 @@ jest.mock('react-native-safe-area-context', () => {
   const ReactRuntime = require('react');
   const SafeAreaView = ReactRuntime.forwardRef((props: {children?: unknown; onLayout?: (...args: unknown[]) => void; style?: unknown; testID?: string}, ref: unknown) => {
     ReactRuntime.useImperativeHandle(ref, () => ({
-      measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) => callback(0, 108, 360, 692),
+      measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) => callback(0, 56, 360, 692),
     }));
     return ReactRuntime.createElement(ReactNative.View, {onLayout: props.onLayout, style: props.style, testID: props.testID}, props.children);
   });
   return {
     SafeAreaView,
-    useSafeAreaInsets: () => ({top: 0, bottom: 0, left: 0, right: 0}),
+    useSafeAreaInsets: () => ({top: 52, bottom: 0, left: 0, right: 0}),
   };
 });
 
@@ -45,12 +45,14 @@ async function renderScreen(child: React.ReactNode) {
 }
 
 test('form shows field-level validation and does not navigate on invalid submission', async () => {
+  expect(calculateKeyboardVerticalOffset(56, 52, 'android')).toBe(108);
+  expect(calculateKeyboardVerticalOffset(56, 52, 'ios')).toBe(56);
   const tree = await renderScreen(<BookFormScreen navigation={navigation as never} route={{key: 'form', name: 'BookForm'} as never} />);
   const root = tree.root.findByProps({testID: 'book-form-root'});
   await ReactTestRenderer.act(() => root.props.onLayout({}));
   const keyboardView = tree.root.findByType(KeyboardAvoidingView);
   expect(keyboardView.props.behavior).toBe(Platform.OS === 'ios' ? 'padding' : 'height');
-  expect(keyboardView.props.keyboardVerticalOffset).toBe(108);
+  expect(keyboardView.props.keyboardVerticalOffset).toBe(calculateKeyboardVerticalOffset(56, 52, Platform.OS));
   await ReactTestRenderer.act(() => tree.root.findByProps({testID: 'save-book-button'}).props.onPress());
   expect(tree.root.findAllByType(TextInput).length).toBe(4);
   expect(tree.root.findAllByType(TextInput).some(input => String(input.props.accessibilityHint).includes('Vui lòng nhập tên sách.'))).toBe(true);
@@ -112,6 +114,33 @@ test('valid save blurs an already hidden IME before navigating and prevents dupl
   isVisible.mockRestore();
   dismiss.mockRestore();
   ReactTestRenderer.act(() => tree.unmount());
+});
+
+test('focused numeric fields scroll the form to its end after viewport changes and keyboard shows', async () => {
+  let keyboardDidShow: (() => void) | undefined;
+  const removeListener = jest.fn();
+  const addListener = jest.spyOn(Keyboard, 'addListener').mockImplementation((eventName, listener) => {
+    if (eventName === 'keyboardDidShow') {
+      keyboardDidShow = listener as () => void;
+    }
+    return {remove: removeListener} as never;
+  });
+  const tree = await renderScreen(<BookFormScreen navigation={navigation as never} route={{key: 'form', name: 'BookForm'} as never} />);
+  const scrollView = tree.root.findByType(ScrollView);
+  const scrollToEnd = jest.spyOn(scrollView.instance, 'scrollToEnd');
+  const quantityInput = tree.root.findAllByType(TextInput).find(input => input.props.testID === 'book-quantity-input');
+  await ReactTestRenderer.act(() => quantityInput?.props.onFocus());
+  await ReactTestRenderer.act(() => scrollView.props.onLayout({}));
+  await ReactTestRenderer.act(async () => { await new Promise(resolve => setTimeout(resolve, 10)); });
+  expect(scrollToEnd).toHaveBeenCalledWith({animated: true});
+  await ReactTestRenderer.act(async () => {
+    keyboardDidShow?.();
+    await new Promise(resolve => setTimeout(resolve, 10));
+  });
+  expect(scrollToEnd.mock.calls.length).toBeGreaterThanOrEqual(2);
+  ReactTestRenderer.act(() => tree.unmount());
+  scrollToEnd.mockRestore();
+  addListener.mockRestore();
 });
 
 test('long press blocks delete for borrowed books and requires confirmation for eligible books', async () => {
