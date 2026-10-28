@@ -82,4 +82,3 @@ Bảng chấm bảy câu, điểm và đường dẫn source: [docs/CHAM_DIEM.md
 
 ![Form hiển thị đầy đủ khi bàn phím mở](docs/evidence/18-keyboard-fixed.png)
 
-Bài được bàn giao bằng Git theo yêu cầu cập nhật của người dùng thay cho ZIP trong đề gốc.
