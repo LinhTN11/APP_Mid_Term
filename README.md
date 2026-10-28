@@ -36,16 +36,16 @@ iOS chỉ có thể build/chạy trên macOS đã cài Xcode và CocoaPods:
 ```sh
 cd LibraryApp
 npm ci
-cd ios
 bundle install
-bundle exec pod install
+cd ios
+BUNDLE_GEMFILE=../Gemfile bundle exec pod install
 cd ..
 npx react-native run-ios
 ```
 
 ## Ghi chú audit dependency
 
-Toolchain audit ghi nhận 15 findings: 8 mức low, 6 moderate và 1 high. Finding high là `image-size@1.2.1` được dùng qua Metro. Bản patched v2 đổi callable API, vì vậy không ép override sang v2 một cách mù quáng: việc đó có thể làm hỏng consumer. Cần xác minh tương thích và cách nâng cấp ở upstream trước khi thay đổi dependency; finding này được ghi nhận là giới hạn còn lại.
+Audit snapshot ngày **2026-10-28**, tạo bằng `npm audit --json` trong `LibraryApp`; raw output: [`artifacts/npm-audit.json`](artifacts/npm-audit.json). Toolchain audit ghi nhận 15 findings: 8 mức low, 6 moderate và 1 high. Finding high là `image-size@1.2.1` được dùng qua Metro. Bản patched v2 đổi callable API, vì vậy không ép override sang v2 một cách mù quáng: việc đó có thể làm hỏng consumer. Cần xác minh tương thích và cách nâng cấp ở upstream trước khi thay đổi dependency; finding này được ghi nhận là giới hạn còn lại.
 
 ## Tính năng
 

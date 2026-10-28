@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import BookListScreen from '../src/screens/BookListScreen';
 import BookDetailScreen from '../src/screens/BookDetailScreen';
 import BookFormScreen, {calculateKeyboardVerticalOffset} from '../src/screens/BookFormScreen';
+import {BOOKS_STORAGE_KEY} from '../src/data/bookStorage';
 import {LibraryProvider} from '../src/state/LibraryContext';
 
 jest.mock('react-native-safe-area-context', () => {
@@ -200,14 +201,21 @@ test('real detail screen shows a storage write error and retry saves the latest 
   expect(tree.root.findByProps({testID: 'storage-error-banner'})).toBeTruthy();
   expect(tree.root.findByProps({children: 'Không thể ghi vào kho lưu trữ.'})).toBeTruthy();
   expect(JSON.parse(attemptedSnapshots[0])[0].borrowed).toBe(1);
+  expect(JSON.parse(attemptedSnapshots[1])[0].borrowed).toBe(2);
 
+  const attemptsBeforeRetry = storage.setItem.mock.calls.length;
   await ReactTestRenderer.act(async () => {
     tree.root.findByProps({testID: 'storage-retry-button'}).props.onPress();
     await Promise.resolve();
     await Promise.resolve();
     await Promise.resolve();
   });
-  expect(JSON.parse(attemptedSnapshots.at(-1)!)[0].borrowed).toBe(2);
+  expect(storage.setItem.mock.calls).toHaveLength(attemptsBeforeRetry + 1);
+  const [retryKey, retryPayload] = storage.setItem.mock.calls.at(-1)!;
+  expect(retryKey).toBe(BOOKS_STORAGE_KEY);
+  expect(JSON.parse(retryPayload)).toEqual([
+    {id: 'retry-book', title: 'Sách thử lại', author: 'Tác giả', category: 'Khoa học', year: 2020, quantity: 3, borrowed: 2},
+  ]);
   expect(tree.root.findAllByProps({testID: 'storage-error-banner'})).toHaveLength(0);
   ReactTestRenderer.act(() => tree.unmount());
 });
