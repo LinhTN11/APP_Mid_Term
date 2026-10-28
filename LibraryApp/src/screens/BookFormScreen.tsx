@@ -1,5 +1,5 @@
-import React, {useEffect, useState} from 'react';
-import {KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AppButton from '../components/AppButton';
@@ -21,6 +21,8 @@ function emptyInput(): BookInput {
 export default function BookFormScreen({navigation, route}: Props) {
   const {books, loading, error, saving, retry, addBook, editBook} = useLibrary();
   const insets = useSafeAreaInsets();
+  const formRootRef = useRef<React.ElementRef<typeof SafeAreaView>>(null);
+  const [keyboardVerticalOffset, setKeyboardVerticalOffset] = useState(0);
   const bookId = route.params?.bookId;
   const book = bookId ? books.find(item => item.id === bookId) : undefined;
   const isEditing = Boolean(bookId);
@@ -33,7 +35,70 @@ export default function BookFormScreen({navigation, route}: Props) {
   } : emptyInput());
   const [errors, setErrors] = useState<BookErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState(false);
   const blocked = Boolean(error && books.length === 0);
+  const exitPendingRef = useRef(false);
+  const exitScheduledRef = useRef(false);
+  const keyboardHideSubscriptionRef = useRef<ReturnType<typeof Keyboard.addListener> | null>(null);
+  const keyboardExitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const exitFrameRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    exitPendingRef.current = false;
+    keyboardHideSubscriptionRef.current?.remove();
+    keyboardHideSubscriptionRef.current = null;
+    if (keyboardExitTimeoutRef.current) {
+      clearTimeout(keyboardExitTimeoutRef.current);
+    }
+    if (exitFrameRef.current) {
+      clearTimeout(exitFrameRef.current);
+    }
+  }, []);
+
+  const finishAfterKeyboardHide = () => {
+    if (!exitPendingRef.current || exitScheduledRef.current) {
+      return;
+    }
+    exitScheduledRef.current = true;
+    keyboardHideSubscriptionRef.current?.remove();
+    keyboardHideSubscriptionRef.current = null;
+    if (keyboardExitTimeoutRef.current) {
+      clearTimeout(keyboardExitTimeoutRef.current);
+      keyboardExitTimeoutRef.current = null;
+    }
+    exitFrameRef.current = setTimeout(() => {
+      exitFrameRef.current = null;
+      if (exitPendingRef.current) {
+        exitPendingRef.current = false;
+        navigation.goBack();
+      }
+    }, 0);
+  };
+
+  const updateKeyboardOffset = () => {
+    formRootRef.current?.measureInWindow((_x, y) => {
+      const measuredOffset = Math.round(y);
+      setKeyboardVerticalOffset(current => current === measuredOffset ? current : measuredOffset);
+    });
+  };
+
+  const dismissKeyboardThenGoBack = () => {
+    if (exitPendingRef.current) {
+      return;
+    }
+    exitPendingRef.current = true;
+    setLeaving(true);
+    exitScheduledRef.current = false;
+    const keyboardWasVisible = Keyboard.isVisible();
+    if (keyboardWasVisible) {
+      keyboardHideSubscriptionRef.current = Keyboard.addListener('keyboardDidHide', finishAfterKeyboardHide);
+      keyboardExitTimeoutRef.current = setTimeout(finishAfterKeyboardHide, 500);
+    }
+    Keyboard.dismiss();
+    if (!keyboardWasVisible) {
+      finishAfterKeyboardHide();
+    }
+  };
 
   useEffect(() => {
     if (book) {
@@ -48,6 +113,9 @@ export default function BookFormScreen({navigation, route}: Props) {
   };
 
   const save = () => {
+    if (exitPendingRef.current) {
+      return;
+    }
     const nextErrors = validateBook(form, book?.borrowed ?? 0);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
@@ -64,7 +132,7 @@ export default function BookFormScreen({navigation, route}: Props) {
       } else {
         addBook(form);
       }
-      navigation.goBack();
+      dismissKeyboardThenGoBack();
     } catch (cause) {
       setSubmitError(cause instanceof Error ? cause.message : 'Không thể lưu thông tin sách.');
     }
@@ -82,71 +150,78 @@ export default function BookFormScreen({navigation, route}: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={['left', 'right']}>
-    <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView
-        contentContainerStyle={[styles.content, {paddingBottom: Math.max(insets.bottom, spacing.xl)}]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
-        <StorageBanner error={error} saving={saving} onRetry={retry} />
-        <Text style={styles.intro}>{isEditing ? 'Cập nhật thông tin cuốn sách trong thư viện.' : 'Lưu lại thông tin để dễ dàng theo dõi từng lượt mượn trả.'}</Text>
-        {submitError ? <Text accessibilityRole="alert" style={styles.submitError}>{submitError}</Text> : null}
-        <FormField
-          label="Tên sách"
-          value={form.title}
-          onChangeText={value => updateField('title', value)}
-          error={errors.title}
-          testID="book-title-input"
-          placeholder="Ví dụ: Dế Mèn phiêu lưu ký"
-          autoCapitalize="sentences"
-          returnKeyType="next"
-        />
-        <FormField
-          label="Tác giả"
-          value={form.author}
-          onChangeText={value => updateField('author', value)}
-          error={errors.author}
-          testID="book-author-input"
-          placeholder="Nhập tên tác giả"
-          autoCapitalize="words"
-          returnKeyType="next"
-        />
-        <View style={styles.categoryGroup}>
-          <Text style={styles.fieldLabel}>Thể loại</Text>
-          <CategoryChips value={form.category} onChange={value => updateField('category', value as BookInput['category'])} error={errors.category} />
-        </View>
-        <View style={styles.numberRow}>
-          <View style={styles.numberField}><FormField
-            label="Năm xuất bản"
-            value={form.year}
-            onChangeText={value => updateField('year', value)}
-            error={errors.year}
-            testID="book-year-input"
-            placeholder="2020"
-            keyboardType="number-pad"
+    <SafeAreaView ref={formRootRef} onLayout={updateKeyboardOffset} testID="book-form-root" style={styles.screen} edges={['left', 'right']}>
+      <KeyboardAvoidingView
+        style={styles.keyboard}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardVerticalOffset}>
+        <ScrollView
+          contentContainerStyle={[styles.content, {paddingBottom: Math.max(insets.bottom, spacing.xl)}]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <StorageBanner error={error} saving={saving} onRetry={retry} />
+          <Text style={styles.intro}>{isEditing ? 'Cập nhật thông tin cuốn sách trong thư viện.' : 'Lưu lại thông tin để dễ dàng theo dõi từng lượt mượn trả.'}</Text>
+          {submitError ? <Text accessibilityRole="alert" style={styles.submitError}>{submitError}</Text> : null}
+          <FormField
+            label="Tên sách"
+            value={form.title}
+            onChangeText={value => updateField('title', value)}
+            error={errors.title}
+            testID="book-title-input"
+            placeholder="Ví dụ: Dế Mèn phiêu lưu ký"
+            autoCapitalize="sentences"
             returnKeyType="next"
-          /></View>
-          <View style={styles.numberField}><FormField
-            label="Số lượng"
-            value={form.quantity}
-            onChangeText={value => updateField('quantity', value)}
-            error={errors.quantity}
-            testID="book-quantity-input"
-            placeholder="1"
-            keyboardType="number-pad"
-            returnKeyType="done"
-          /></View>
-        </View>
-        {book && book.borrowed > 0 ? <Text style={styles.borrowedNote}>Đang có {book.borrowed} cuốn được mượn. Số lượng không thể thấp hơn mức này.</Text> : null}
-        <AppButton
-          title={isEditing ? 'Lưu thay đổi' : 'Thêm vào thư viện'}
-          onPress={save}
-          disabled={blocked}
-          testID="save-book-button"
-          style={styles.saveButton}
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+          />
+          <FormField
+            label="Tác giả"
+            value={form.author}
+            onChangeText={value => updateField('author', value)}
+            error={errors.author}
+            testID="book-author-input"
+            placeholder="Nhập tên tác giả"
+            autoCapitalize="words"
+            returnKeyType="next"
+          />
+          <View style={styles.categoryGroup}>
+            <Text style={styles.fieldLabel}>Thể loại</Text>
+            <CategoryChips value={form.category} onChange={value => updateField('category', value as BookInput['category'])} error={errors.category} />
+          </View>
+          <View style={styles.numberRow}>
+            <View style={styles.numberField}>
+              <FormField
+                label="Năm xuất bản"
+                value={form.year}
+                onChangeText={value => updateField('year', value)}
+                error={errors.year}
+                testID="book-year-input"
+                placeholder="2020"
+                keyboardType="number-pad"
+                returnKeyType="next"
+              />
+            </View>
+            <View style={styles.numberField}>
+              <FormField
+                label="Số lượng"
+                value={form.quantity}
+                onChangeText={value => updateField('quantity', value)}
+                error={errors.quantity}
+                testID="book-quantity-input"
+                placeholder="1"
+                keyboardType="number-pad"
+                returnKeyType="done"
+              />
+            </View>
+          </View>
+          {book && book.borrowed > 0 ? <Text style={styles.borrowedNote}>Đang có {book.borrowed} cuốn được mượn. Số lượng không thể thấp hơn mức này.</Text> : null}
+          <AppButton
+            title={leaving ? 'Đang hoàn tất…' : isEditing ? 'Lưu thay đổi' : 'Thêm vào thư viện'}
+            onPress={save}
+            disabled={blocked || leaving}
+            testID="save-book-button"
+            style={styles.saveButton}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

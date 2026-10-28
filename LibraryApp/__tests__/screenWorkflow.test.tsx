@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
-import {Alert, TextInput} from 'react-native';
+import {Alert, Keyboard, KeyboardAvoidingView, Platform, TextInput} from 'react-native';
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: {getItem: jest.fn(), setItem: jest.fn()},
@@ -13,8 +13,15 @@ import {LibraryProvider} from '../src/state/LibraryContext';
 
 jest.mock('react-native-safe-area-context', () => {
   const ReactNative = require('react-native');
+  const ReactRuntime = require('react');
+  const SafeAreaView = ReactRuntime.forwardRef((props: {children?: unknown; onLayout?: (...args: unknown[]) => void; style?: unknown; testID?: string}, ref: unknown) => {
+    ReactRuntime.useImperativeHandle(ref, () => ({
+      measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) => callback(0, 108, 360, 692),
+    }));
+    return ReactRuntime.createElement(ReactNative.View, {onLayout: props.onLayout, style: props.style, testID: props.testID}, props.children);
+  });
   return {
-    SafeAreaView: ({children}: {children: React.ReactNode}) => require('react').createElement(ReactNative.View, null, children),
+    SafeAreaView,
     useSafeAreaInsets: () => ({top: 0, bottom: 0, left: 0, right: 0}),
   };
 });
@@ -39,11 +46,71 @@ async function renderScreen(child: React.ReactNode) {
 
 test('form shows field-level validation and does not navigate on invalid submission', async () => {
   const tree = await renderScreen(<BookFormScreen navigation={navigation as never} route={{key: 'form', name: 'BookForm'} as never} />);
+  const root = tree.root.findByProps({testID: 'book-form-root'});
+  await ReactTestRenderer.act(() => root.props.onLayout({}));
+  const keyboardView = tree.root.findByType(KeyboardAvoidingView);
+  expect(keyboardView.props.behavior).toBe(Platform.OS === 'ios' ? 'padding' : 'height');
+  expect(keyboardView.props.keyboardVerticalOffset).toBe(108);
   await ReactTestRenderer.act(() => tree.root.findByProps({testID: 'save-book-button'}).props.onPress());
   expect(tree.root.findAllByType(TextInput).length).toBe(4);
   expect(tree.root.findAllByType(TextInput).some(input => String(input.props.accessibilityHint).includes('Vui lòng nhập tên sách.'))).toBe(true);
   expect(tree.root.findByProps({children: 'Vui lòng nhập tên tác giả.'})).toBeTruthy();
   expect(navigation.goBack).not.toHaveBeenCalled();
+  ReactTestRenderer.act(() => tree.unmount());
+});
+
+test('valid save blurs the IME and waits for keyboard hide before leaving the form', async () => {
+  const isVisible = jest.spyOn(Keyboard, 'isVisible').mockReturnValue(true);
+  const dismiss = jest.spyOn(Keyboard, 'dismiss').mockImplementation(jest.fn());
+  let keyboardDidHide: (() => void) | undefined;
+  const removeListener = jest.fn();
+  const addListener = jest.spyOn(Keyboard, 'addListener').mockImplementation((eventName, listener) => {
+    if (eventName === 'keyboardDidHide') {
+      keyboardDidHide = listener as () => void;
+    }
+    return {remove: removeListener} as never;
+  });
+  const tree = await renderScreen(<BookFormScreen navigation={navigation as never} route={{key: 'form', name: 'BookForm'} as never} />);
+  const fields = tree.root.findAllByType(TextInput);
+  const values = ['Sách hợp lệ', 'Tác giả', '2020', '2'];
+  for (let index = 0; index < fields.length; index += 1) {
+    await ReactTestRenderer.act(() => fields[index].props.onChangeText(values[index]));
+  }
+  await ReactTestRenderer.act(() => tree.root.findByProps({testID: 'save-book-button'}).props.onPress());
+  expect(dismiss).toHaveBeenCalled();
+  expect(navigation.goBack).not.toHaveBeenCalled();
+  expect(keyboardDidHide).toBeDefined();
+  await ReactTestRenderer.act(async () => {
+    keyboardDidHide?.();
+    await new Promise(resolve => setTimeout(resolve, 5));
+  });
+  expect(navigation.goBack).toHaveBeenCalledTimes(1);
+  expect(removeListener).toHaveBeenCalled();
+  isVisible.mockRestore();
+  dismiss.mockRestore();
+  addListener.mockRestore();
+  ReactTestRenderer.act(() => tree.unmount());
+});
+
+test('valid save blurs an already hidden IME before navigating and prevents duplicate submits', async () => {
+  const isVisible = jest.spyOn(Keyboard, 'isVisible').mockReturnValue(false);
+  const dismiss = jest.spyOn(Keyboard, 'dismiss').mockImplementation(jest.fn());
+  const tree = await renderScreen(<BookFormScreen navigation={navigation as never} route={{key: 'form', name: 'BookForm'} as never} />);
+  const fields = tree.root.findAllByType(TextInput);
+  const values = ['Sách hợp lệ', 'Tác giả', '2020', '2'];
+  for (let index = 0; index < fields.length; index += 1) {
+    await ReactTestRenderer.act(() => fields[index].props.onChangeText(values[index]));
+  }
+  const save = tree.root.findByProps({testID: 'save-book-button'}).props.onPress;
+  await ReactTestRenderer.act(() => { save(); save(); });
+  expect(dismiss).toHaveBeenCalledTimes(1);
+  expect(tree.root.findByProps({testID: 'save-book-button'}).props.disabled).toBe(true);
+  expect(navigation.goBack).toHaveBeenCalledTimes(1);
+  expect(dismiss.mock.invocationCallOrder[0]).toBeLessThan(navigation.goBack.mock.invocationCallOrder[0]);
+  await ReactTestRenderer.act(async () => { await new Promise(resolve => setTimeout(resolve, 5)); });
+  expect(navigation.goBack).toHaveBeenCalledTimes(1);
+  isVisible.mockRestore();
+  dismiss.mockRestore();
   ReactTestRenderer.act(() => tree.unmount());
 });
 

@@ -27,3 +27,11 @@ No visual/emulator QA is claimed here; root is running Android build and device 
 - Added the validation message to the native `TextInput.accessibilityHint`, preserving any hint provided by the caller. No unsupported invalid-state prop was added.
 - Strengthened the UI test to inspect the rendered native `TextInput`: `StyleSheet.flatten(input.props.style).borderColor === colors.danger`, plus the error text in `accessibilityHint`.
 - Verification: `npm.cmd test -- --runInBand __tests__/ui.test.tsx` passed (1 suite, 3 tests); `npx.cmd tsc --noEmit` passed (exit 0); `npm.cmd run lint` passed (exit 0).
+
+## Keyboard and IME crash follow-up
+
+- API 36 / 360×800dp evidence showed the focused quantity input at y=522dp while the numeric keyboard began around y=500dp; the ScrollView still occupied the full screen. The Android KAV had no behavior, so `adjustResize` alone did not shrink the content viewport under the edge-to-edge target.
+- The form now uses `KeyboardAvoidingView` with `behavior="height"` on Android and retains `padding` on iOS. It measures the actual outer SafeAreaView screen origin with native `measureInWindow` and passes that y coordinate as `keyboardVerticalOffset`; this includes the rendered native-stack header and top inset without a hard-coded header size or added dependency, and updates when the root layout changes.
+- The save path calls React Native `Keyboard.dismiss()` before leaving. If visible, it waits for `keyboardDidHide` with a bounded 500ms fallback; if already hidden, it still blurs via `Keyboard.dismiss()` and defers navigation to the next event-loop turn. Synchronous duplicate-submit and disabled-state guards prevent duplicate adds. Pending event/timer work is removed on unmount.
+- Workflow tests cover measured header offset, iOS/Android KAV behavior, visible-keyboard hide-before-navigation, already-hidden keyboard dismissal, and duplicate-submit protection.
+- Verification: `npm.cmd test -- --runInBand` passed (6 suites, 29 tests); `npx.cmd tsc --noEmit` passed (exit 0); `npm.cmd run lint` passed (exit 0). Android rebuild / API 36 keyboard and crash reproduction are pending root native QA; no runtime visual result is claimed here.
