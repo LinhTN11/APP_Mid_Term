@@ -146,3 +146,39 @@ test('detail disables actions at both borrowing boundaries', async () => {
   expect(available.root.findByProps({testID: 'return-book-button'}).props.disabled).toBe(true);
   ReactTestRenderer.act(() => available.unmount());
 });
+
+test('real detail screen shows a storage write error and retry saves the latest provider snapshot', async () => {
+  storage.getItem.mockResolvedValue(JSON.stringify([
+    {id: 'retry-book', title: 'Sách thử lại', author: 'Tác giả', category: 'Khoa học', year: 2020, quantity: 3, borrowed: 0},
+  ]));
+  const attemptedSnapshots: string[] = [];
+  storage.setItem.mockImplementation(async (_key, value) => {
+    attemptedSnapshots.push(value);
+    if (attemptedSnapshots.length <= 2) {
+      throw new Error('Không thể ghi vào kho lưu trữ.');
+    }
+  });
+  const tree = await renderScreen(<BookDetailScreen navigation={navigation as never} route={{key: 'detail', name: 'BookDetail', params: {bookId: 'retry-book'}} as never} />);
+  const lend = tree.root.findByProps({testID: 'lend-book-button'}).props.onPress;
+  await ReactTestRenderer.act(async () => {
+    lend();
+    lend();
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+
+  expect(tree.root.findByProps({testID: 'storage-error-banner'})).toBeTruthy();
+  expect(tree.root.findByProps({children: 'Không thể ghi vào kho lưu trữ.'})).toBeTruthy();
+  expect(JSON.parse(attemptedSnapshots[0])[0].borrowed).toBe(1);
+
+  await ReactTestRenderer.act(async () => {
+    tree.root.findByProps({testID: 'storage-retry-button'}).props.onPress();
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  expect(JSON.parse(attemptedSnapshots.at(-1)!)[0].borrowed).toBe(2);
+  expect(tree.root.findAllByProps({testID: 'storage-error-banner'})).toHaveLength(0);
+  ReactTestRenderer.act(() => tree.unmount());
+});

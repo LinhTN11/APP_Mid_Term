@@ -27,7 +27,7 @@ npm start
 npx react-native run-android
 ```
 
-Có thể chạy `powershell -ExecutionPolicy Bypass -File ..\scripts\check-submission.ps1` từ thư mục gốc để kiểm tra file đã track, Jest, TypeScript và ESLint. Script chỉ đọc trạng thái Git và chạy các lệnh kiểm tra.
+Từ thư mục gốc của repository, chạy `powershell -ExecutionPolicy Bypass -File .\scripts\check-submission.ps1` để kiểm tra file đã track, Jest, TypeScript và ESLint. Script chỉ đọc trạng thái Git và chạy các lệnh kiểm tra.
 
 Máy này có Java IDE Gradle importer bị tắt trong `.vscode/settings.json`: importer đang dùng Java 25, không tương thích với Gradle 8.14.1. Dùng JDK 17/21 trong Android Studio hoặc chạy Gradle qua CLI; không nâng Gradle lên 9 để vượt qua importer.
 
@@ -36,8 +36,16 @@ iOS chỉ có thể build/chạy trên macOS đã cài Xcode và CocoaPods:
 ```sh
 cd LibraryApp
 npm ci
+cd ios
+bundle install
+bundle exec pod install
+cd ..
 npx react-native run-ios
 ```
+
+## Ghi chú audit dependency
+
+Toolchain audit ghi nhận 15 findings: 8 mức low, 6 moderate và 1 high. Finding high là `image-size@1.2.1` được dùng qua Metro. Bản patched v2 đổi callable API, vì vậy không ép override sang v2 một cách mù quáng: việc đó có thể làm hỏng consumer. Cần xác minh tương thích và cách nâng cấp ở upstream trước khi thay đổi dependency; finding này được ghi nhận là giới hạn còn lại.
 
 ## Tính năng
 
