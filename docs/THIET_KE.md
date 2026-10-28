@@ -11,7 +11,7 @@ Nguồn: `C:\Users\trann\Downloads\De1_QuanLyThuVien.docx`, môn Lập trình di
 - React Native CLI + TypeScript, không Expo; native Android và iOS từ template CLI chính thức.
 - React Native 0.80.3: dùng API 35 và NDK 27.1 đã có trong máy, giảm tải SDK/toolchain. Ghim phiên bản và giữ package-lock để tái lập.
 - React Navigation native stack; AsyncStorage 2.2.0; chỉ thư viện runtime được đề cho phép. Không backend, tài khoản, thư viện UI hoặc state management bên ngoài.
-- Context + reducer dùng chung dữ liệu; hàm domain thuần để kiểm tra quy tắc; persistence có hàng đợi ghi để không đảo thứ tự khi thao tác nhanh.
+- Context state + ref dùng chung dữ liệu: React state phát cập nhật giao diện, ref giữ snapshot mới nhất để mutation nhanh không bị stale; domain thuần kiểm tra quy tắc; hàng đợi persistence giữ đúng thứ tự ghi.
 
 Phương án khác: dùng bản RN mới nhất cần toolchain mới, không tăng điểm; thêm backend không nằm trong đề, tăng rủi ro và thời gian. Chọn app offline gọn để tập trung tiêu chí chấm.
 
