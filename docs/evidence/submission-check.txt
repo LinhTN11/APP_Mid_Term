@@ -1,0 +1,22 @@
+Tracked-file check passed (84 files inspected).
+
+> LibraryApp@0.0.1 test
+> jest --runInBand
+
+PASS __tests__/screenWorkflow.test.tsx
+PASS __tests__/App.test.tsx
+PASS __tests__/libraryIntegration.test.tsx
+PASS __tests__/ui.test.tsx
+PASS __tests__/bookStorage.test.ts
+PASS __tests__/books.test.ts
+
+Test Suites: 6 passed, 6 total
+Tests:       31 passed, 31 total
+Snapshots:   0 total
+Time:        2.222 s, estimated 5 s
+Ran all test suites.
+
+> LibraryApp@0.0.1 lint
+> eslint .
+
+Submission checks passed.

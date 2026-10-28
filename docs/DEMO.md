@@ -10,7 +10,7 @@ Chuẩn bị emulator đã cài app. Seed ban đầu có năm sách đủ bốn 
 | 2:30–3:15 | Mở sách đã hết và sách chưa mượn | “Cho mượn” bị disabled khi hết; “Nhận trả” bị disabled khi borrowed bằng 0. |
 | 3:15–4:30 | Thêm sách với tên/tác giả bỏ trống; sửa lại dữ liệu hợp lệ | Lỗi hiện ngay dưới ô; cùng một form hỗ trợ tạo và sửa. |
 | 4:30–5:30 | Nhấn giữ sách đang mượn, sau đó nhấn giữ sách đủ điều kiện và chọn Huỷ; thử lại rồi xác nhận Xoá | Sách đang mượn bị chặn; thao tác xoá chỉ xảy ra sau xác nhận. |
-| 5:30–6:30 | Thoát/mở lại app, kiểm tra danh sách còn lại | Persistence trên thiết bị nếu đã hoàn tất xác minh; hiện trạng chưa có kết quả vòng đời thiết bị, nên phần này **chưa kiểm chứng**. |
+| 5:30–6:30 | Thoát/mở lại app, kiểm tra danh sách còn lại | Persistence đã kiểm tra bằng force-stop/mở lại trên emulator; giữ cả danh sách rỗng sau khi xoá hết, không seed lại. [Bằng chứng](QA_NATIVE.md). |
 
 ## Các trường hợp nên chuẩn bị khi giảng viên hỏi
 

@@ -1,0 +1,125 @@
+{
+  "date": "2026-10-28",
+  "timezone": "Asia/Saigon",
+  "platform": "Pixel_9 API36 x86_64",
+  "viewport": "360x800dp (720x1600px, density320)",
+  "method": "Native ADB input and UiAutomator assertions, screen captures visually inspected by root",
+  "sourceCommit": "34f40d2",
+  "results": [
+    {
+      "case": "initial_seed_list",
+      "result": "PASS",
+      "heads": 5,
+      "borrowed": 4
+    },
+    {
+      "case": "case_insensitive_author_search_and_category",
+      "result": "PASS"
+    },
+    {
+      "case": "combined_filter_excludes_mismatched_category",
+      "result": "PASS"
+    },
+    {
+      "case": "required_inline_validation",
+      "result": "PASS"
+    },
+    {
+      "case": "numeric_year_quantity_inline_errors",
+      "result": "PASS"
+    },
+    {
+      "case": "clear_filters_restores_list",
+      "result": "PASS"
+    },
+    {
+      "case": "add_book",
+      "result": "PASS",
+      "title": "QA Library",
+      "quantity": 2
+    },
+    {
+      "case": "detail_all_fields_and_return_disabled",
+      "result": "PASS"
+    },
+    {
+      "case": "lend_to_boundary_disabled",
+      "result": "PASS"
+    },
+    {
+      "case": "edit_prefills_shared_form",
+      "result": "PASS"
+    },
+    {
+      "case": "edit_quantity_below_borrowed_blocked",
+      "result": "PASS"
+    },
+    {
+      "case": "edit_updates_detail_preserves_borrowed",
+      "result": "PASS"
+    },
+    {
+      "case": "force_stop_relaunch_preserves_added_edited_and_borrowed",
+      "result": "PASS"
+    },
+    {
+      "case": "focused_numeric_field_visible_above_keyboard",
+      "result": "PASS",
+      "bounds": [
+        368,
+        590,
+        688,
+        690
+      ],
+      "keyboardTop": 1002
+    },
+    {
+      "case": "save_after_keyboard_hidden_no_crash",
+      "result": "PASS"
+    },
+    {
+      "case": "save_with_keyboard_open_no_crash",
+      "result": "PASS"
+    },
+    {
+      "case": "long_press_delete_borrowed_blocked_alert",
+      "result": "PASS"
+    },
+    {
+      "case": "return_to_zero_disabled",
+      "result": "PASS"
+    },
+    {
+      "case": "cancel_delete_preserves_book",
+      "result": "PASS"
+    },
+    {
+      "case": "confirmed_long_press_delete",
+      "result": "PASS"
+    },
+    {
+      "case": "header_back_while_ime_open_no_crash",
+      "result": "PASS"
+    },
+    {
+      "case": "hardware_back_after_hiding_ime_no_crash",
+      "result": "PASS"
+    },
+    {
+      "case": "deletion_survives_cold_relaunch",
+      "result": "PASS"
+    },
+    {
+      "case": "delete_all_seed_books_empty_library_state",
+      "result": "PASS"
+    },
+    {
+      "case": "persisted_empty_array_survives_cold_relaunch_no_reseed",
+      "result": "PASS"
+    },
+    {
+      "case": "fresh_install_seed_restored_for_demo",
+      "result": "PASS"
+    }
+  ]
+}

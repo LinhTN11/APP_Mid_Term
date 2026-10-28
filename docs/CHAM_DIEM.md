@@ -4,21 +4,21 @@ Thang điểm theo đề: tổng 10 điểm. Các mục dưới đây map trực
 
 | Câu | Điểm | Yêu cầu / nơi kiểm tra | Bằng chứng |
 | --- | ---: | --- | --- |
-| 1. Danh sách | 1,5 | [BookListScreen](../LibraryApp/src/screens/BookListScreen.tsx), [BookCard](../LibraryApp/src/components/BookCard.tsx), [seed](../LibraryApp/src/data/seedBooks.ts) | FlatList, thẻ sách, nhãn hết sách, tổng đầu sách và tổng sách đang mượn. Logic/domain test tự động; hiển thị thực tế Android đã chạy, đánh giá chi tiết trực quan **chưa kiểm chứng**. |
-| 2. Thêm / sửa | 1,5 | [BookFormScreen](../LibraryApp/src/screens/BookFormScreen.tsx), [validation](../LibraryApp/src/domain/books.ts) | Dùng chung form, điền sẵn khi sửa, lỗi bên dưới trường; có test domain và screen. |
-| 3. Xoá | 1,0 | [BookListScreen](../LibraryApp/src/screens/BookListScreen.tsx), [deleteBook](../LibraryApp/src/domain/books.ts) | Nhấn giữ, Alert xác nhận, chặn sách đang mượn; test nghiệp vụ và screen xác minh chỉ xoá sau callback xác nhận. |
-| 4. Chi tiết, mượn/trả | 1,5 | [BookDetailScreen](../LibraryApp/src/screens/BookDetailScreen.tsx), [domain](../LibraryApp/src/domain/books.ts) | Chi tiết và giới hạn mượn/trả; test boundary ở domain và trạng thái disabled ở screen. Thao tác trực quan trên emulator **chưa kiểm chứng**. |
-| 5. Tìm kiếm / lọc | 1,5 | [BookListScreen](../LibraryApp/src/screens/BookListScreen.tsx), [filterBooks](../LibraryApp/src/domain/books.ts) | Search tên/tác giả không phân biệt hoa thường kết hợp thể loại; test domain. Thao tác trực quan **chưa kiểm chứng**. |
-| 6. AsyncStorage | 1,0 | [bookStorage](../LibraryApp/src/data/bookStorage.ts), [LibraryProvider](../LibraryApp/src/state/LibraryContext.tsx) | Test seed một lần, giữ `[]`, lỗi read/write, retry snapshot mới, và remount từ JSON. Kiểm tra vòng đời trên thiết bị **chưa kiểm chứng**. |
-| 7. Giao diện | 2,0 | [theme](../LibraryApp/src/theme/index.ts), [components](../LibraryApp/src/components/), [screens](../LibraryApp/src/screens/) | Automated screen tests bao phủ lỗi field, Alert xoá và disabled boundary. Màu/chữ, bố cục, phản hồi nhấn, keyboard và safe area trên emulator **chưa kiểm chứng**. |
+| 1. Danh sách | 1,5 | [BookListScreen](../LibraryApp/src/screens/BookListScreen.tsx), [BookCard](../LibraryApp/src/components/BookCard.tsx), [seed](../LibraryApp/src/data/seedBooks.ts) | Đã kiểm tra Android: 5 đầu sách, tổng đang mượn 4, card và nhãn Hết sách đỏ; [ảnh](evidence/01-list.png). |
+| 2. Thêm / sửa | 1,5 | [BookFormScreen](../LibraryApp/src/screens/BookFormScreen.tsx), [validation](../LibraryApp/src/domain/books.ts) | Đã thêm/sửa trên emulator; preload, lỗi bắt buộc/năm/số lượng và quantity < borrowed đều được kiểm tra; có test domain/screen. |
+| 3. Xoá | 1,0 | [BookListScreen](../LibraryApp/src/screens/BookListScreen.tsx), [deleteBook](../LibraryApp/src/domain/books.ts) | Đã thử nhấn giữ, chặn sách đang mượn, Huỷ giữ nguyên và xác nhận mới xoá trên emulator; có test nghiệp vụ/screen. |
+| 4. Chi tiết, mượn/trả | 1,5 | [BookDetailScreen](../LibraryApp/src/screens/BookDetailScreen.tsx), [domain](../LibraryApp/src/domain/books.ts) | Đã xem chi tiết, mượn đến hết và trả đến 0, kiểm tra nút disabled trên emulator; test boundary/domain/screen. |
+| 5. Tìm kiếm / lọc | 1,5 | [BookListScreen](../LibraryApp/src/screens/BookListScreen.tsx), [filterBooks](../LibraryApp/src/domain/books.ts) | `HAWKING` + Khoa học có kết quả; đổi Giáo trình rỗng, xoá bộ lọc khôi phục; native và domain test đạt. |
+| 6. AsyncStorage | 1,0 | [bookStorage](../LibraryApp/src/data/bookStorage.ts), [LibraryProvider](../LibraryApp/src/state/LibraryContext.tsx) | Force-stop/mở lại giữ sách thêm/sửa/borrowed; dữ liệu xoá và `[]` vẫn giữ, không reseed. Lỗi read/write/retry kiểm tra bằng integration tests. |
+| 7. Giao diện | 2,0 | [theme](../LibraryApp/src/theme/index.ts), [components](../LibraryApp/src/components/), [screens](../LibraryApp/src/screens/) | Đã xem bố cục 360×800dp, card/shadow, lỗi đỏ, kho rỗng, keyboard số và safe area. [Ô số lượng + nút lưu nằm trên IME](evidence/18-keyboard-fixed.png). |
 | **Tổng** | **10,0** | [Đề bài](../DE_BAI.md) | Không cam kết điểm; việc chấm cuối cùng thuộc giảng viên. |
 
 ## Phân biệt phạm vi xác minh
 
-- **Automated:** Jest (domain, storage, provider và screen), `tsc --noEmit`, ESLint. Chạy bằng `powershell -ExecutionPolicy Bypass -File scripts/check-submission.ps1` từ thư mục gốc.
+- **Automated:** **31/31 test, 6 suite**, TypeScript và ESLint đạt. Chạy bằng `powershell -ExecutionPolicy Bypass -File scripts/check-submission.ps1` từ thư mục gốc; [log](evidence/submission-check.txt).
 - **Native:** Android `assembleDebug` thành công với JDK 21.0.6, Node 24.15.0, Gradle 8.14.1, React Native 0.80.3, compile SDK 35, NDK 27.1; CLI cài/mở ứng dụng trên Pixel_9 API 36. Build và launch không tự chứng minh mọi tương tác UI.
-- **Visual và interaction QA:** **chưa kiểm chứng** đến khi checklist emulator được hoàn tất.
-- **Persistence qua vòng đời ứng dụng thật:** test remount provider đọc JSON đã lưu; đóng/mở app trên emulator **chưa kiểm chứng**.
+- **Visual và interaction QA:** các luồng trong [QA_NATIVE.md](QA_NATIVE.md) đạt trên Pixel_9 API 36, viewport 360×800dp. Chưa xác minh iOS, thiết bị thật và mọi cỡ chữ/viewport.
+- **Persistence qua vòng đời ứng dụng thật:** đã kiểm tra force-stop/mở lại với dữ liệu thêm/sửa/mượn/xoá và kho rỗng.
 
 ## Điểm dễ bị trừ
 
