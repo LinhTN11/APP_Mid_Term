@@ -1,10 +1,12 @@
 import React from 'react';
+import {StyleSheet, TextInput} from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import AppButton from '../src/components/AppButton';
 import BookCard from '../src/components/BookCard';
 import CategoryChips from '../src/components/CategoryChips';
 import FormField from '../src/components/FormField';
 import {SEED_BOOKS} from '../src/data/seedBooks';
+import {colors} from '../src/theme';
 
 test('book card exposes its stable id and book summary', async () => {
   let tree: ReactTestRenderer.ReactTestRenderer | undefined;
@@ -38,6 +40,9 @@ test('disabled action communicates its state and field error uses the danger bor
     );
   });
   expect(tree?.root.findByProps({testID: 'lend-book-button'}).props.disabled).toBe(true);
-  expect(tree?.root.findByProps({testID: 'book-year-input'})).toBeTruthy();
+  const input = tree?.root.findAllByType(TextInput)[0];
+  expect(input).toBeTruthy();
+  expect(StyleSheet.flatten(input?.props.style)?.borderColor).toBe(colors.danger);
+  expect(input?.props.accessibilityHint).toContain('Năm xuất bản không hợp lệ.');
   expect(tree?.root.findByProps({children: 'Năm xuất bản không hợp lệ.'})).toBeTruthy();
 });

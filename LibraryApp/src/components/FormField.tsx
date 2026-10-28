@@ -17,6 +17,7 @@ export default function FormField({label, value, onChangeText, error, testID, ..
       <TextInput
         {...inputProps}
         accessibilityLabel={label}
+        accessibilityHint={error ? [inputProps.accessibilityHint, error].filter(Boolean).join(' ') : inputProps.accessibilityHint}
         value={value}
         onChangeText={onChangeText}
         testID={testID}

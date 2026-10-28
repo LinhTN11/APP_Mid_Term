@@ -21,3 +21,9 @@
 | `git diff --check` | Passed, no whitespace errors reported |
 
 No visual/emulator QA is claimed here; root is running Android build and device QA separately. No API, dependency, or native build-setting changes were made by this task.
+
+## Review follow-up — accessibility and test clarity
+
+- Added the validation message to the native `TextInput.accessibilityHint`, preserving any hint provided by the caller. No unsupported invalid-state prop was added.
+- Strengthened the UI test to inspect the rendered native `TextInput`: `StyleSheet.flatten(input.props.style).borderColor === colors.danger`, plus the error text in `accessibilityHint`.
+- Verification: `npm.cmd test -- --runInBand __tests__/ui.test.tsx` passed (1 suite, 3 tests); `npx.cmd tsc --noEmit` passed (exit 0); `npm.cmd run lint` passed (exit 0).
