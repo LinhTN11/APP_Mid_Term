@@ -1,0 +1,11 @@
+.superpowers/
+artifacts/
+*.zip
+.DS_Store
+**/node_modules/
+**/.gradle/
+**/build/
+**/local.properties
+**/Pods/
+**/.cxx/
+**/.kotlin/
