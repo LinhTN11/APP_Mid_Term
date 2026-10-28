@@ -55,6 +55,30 @@ describe('book storage', () => {
     expect(storage.writes).toHaveLength(0);
   });
 
+  test('rejects unsafe persisted quantity and borrowed counters', () => {
+    const unsafeQuantity = {
+      ...SEED_BOOKS[0],
+      quantity: Number.MAX_SAFE_INTEGER + 1,
+      borrowed: 0,
+    };
+    const unsafeBorrowed = {
+      ...SEED_BOOKS[0],
+      quantity: Number.MAX_SAFE_INTEGER + 3,
+      borrowed: Number.MAX_SAFE_INTEGER + 1,
+    };
+
+    expect(() => parseStoredBooks(JSON.stringify([unsafeQuantity]))).toThrow('không hợp lệ');
+    expect(() => parseStoredBooks(JSON.stringify([unsafeBorrowed]))).toThrow('không hợp lệ');
+  });
+
+  test('trims stored titles and authors when loading valid records', () => {
+    const stored = [{...SEED_BOOKS[0], title: '  Dế Mèn  ', author: ' Tô Hoài '}];
+    expect(parseStoredBooks(JSON.stringify(stored))[0]).toMatchObject({
+      title: 'Dế Mèn',
+      author: 'Tô Hoài',
+    });
+  });
+
   test('does not overwrite storage when reading fails', async () => {
     const storage: StorageAdapter = {
       async getItem() {

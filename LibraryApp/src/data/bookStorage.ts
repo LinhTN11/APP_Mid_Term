@@ -19,12 +19,12 @@ export function isBook(value: unknown): value is Book {
     typeof candidate.author === 'string' &&
     candidate.author.trim().length > 0 &&
     CATEGORIES.includes(candidate.category as (typeof CATEGORIES)[number]) &&
-    Number.isInteger(candidate.year) &&
+    Number.isSafeInteger(candidate.year) &&
     candidate.year! >= 1900 &&
     candidate.year! <= new Date().getFullYear() &&
-    Number.isInteger(candidate.quantity) &&
+    Number.isSafeInteger(candidate.quantity) &&
     candidate.quantity! > 0 &&
-    Number.isInteger(candidate.borrowed) &&
+    Number.isSafeInteger(candidate.borrowed) &&
     candidate.borrowed! >= 0 &&
     candidate.borrowed! <= candidate.quantity!
   );
@@ -44,7 +44,11 @@ export function parseStoredBooks(raw: string): Book[] {
   ) {
     throw new Error('Dữ liệu sách không hợp lệ. Vui lòng thử tải lại.');
   }
-  return value;
+  return value.map(book => ({
+    ...book,
+    title: book.title.trim(),
+    author: book.author.trim(),
+  }));
 }
 
 export async function loadBooks(
@@ -71,9 +75,3 @@ export function createBookWriter(storage: StorageAdapter = AsyncStorage) {
   };
 }
 
-export async function saveBooks(
-  books: Book[],
-  storage: StorageAdapter = AsyncStorage,
-): Promise<void> {
-  await storage.setItem(BOOKS_STORAGE_KEY, JSON.stringify(books));
-}
