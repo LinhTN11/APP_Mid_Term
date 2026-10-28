@@ -1,7 +1,7 @@
 # APP_Mid_Term — Ứng dụng quản lý thư viện
 
 **Sinh viên:** Trần Ngọc Linh — **MSSV:** B23DCC097  
-**Lớp:** chưa được cung cấp.
+**Lớp:** RIPT1412-20261-01.
 
 Ứng dụng React Native CLI quản lý sách offline. Dữ liệu được lưu trên thiết bị bằng AsyncStorage; không cần tài khoản, backend hay kết nối mạng.
 
