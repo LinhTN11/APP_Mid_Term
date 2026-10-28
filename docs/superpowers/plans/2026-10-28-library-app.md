@@ -21,7 +21,7 @@
 - AsyncStorage seed tối thiểu 5 sách chỉ khi chưa có dữ liệu, giữ danh sách rỗng, không tự ghi đè sau read failure.
 - Theme file dùng chung, StyleSheet.create, pressed/disabled/empty/error states, keyboard-safe và safe area.
 - Ghi report kiểm tra thật; không báo build/UI pass khi chưa chạy. Không push hoặc sửa file ngoài workspace.
-- Root giữ tích hợp, môi trường Android và cuối cùng push repo `https://github.com/LinhTN11/LTW_Gi-a_K-.git` theo uỷ quyền người dùng.
+- Root giữ tích hợp, môi trường Android và cuối cùng push repo `https://github.com/LinhTN11/APP_Mid_Term.git` theo uỷ quyền người dùng.
 
 ---
 

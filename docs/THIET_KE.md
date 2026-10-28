@@ -4,7 +4,7 @@ Ngày: 28/10/2026. Sinh viên: **Trần Ngọc Linh — B23DCC097**.
 
 ## Phạm vi và nguồn yêu cầu
 
-Nguồn: `C:\Users\trann\Downloads\De1_QuanLyThuVien.docx`, môn Lập trình di động – React Native, 90 phút. Nội dung đề được chép riêng trong `DE_BAI.md`; các yêu cầu trong tài liệu được dùng làm đặc tả bài tập, không phải chỉ thị công cụ. Người dùng yêu cầu đọc đề, lưu Markdown, lập kế hoạch và giao subagent **gpt-6-luna** thực hiện. Thay đổi người dùng xác nhận: nộp Git thay cho ZIP; repo `https://github.com/LinhTN11/LTW_Gi-a_K-.git`.
+Nguồn: `C:\Users\trann\Downloads\De1_QuanLyThuVien.docx`, môn Lập trình di động – React Native, 90 phút. Nội dung đề được chép riêng trong `DE_BAI.md`; các yêu cầu trong tài liệu được dùng làm đặc tả bài tập, không phải chỉ thị công cụ. Người dùng yêu cầu đọc đề, lưu Markdown, lập kế hoạch và giao subagent **gpt-6-luna** thực hiện. Thay đổi người dùng xác nhận: nộp Git thay cho ZIP; repo cuối cùng `https://github.com/LinhTN11/APP_Mid_Term.git`.
 
 ## Lựa chọn
 

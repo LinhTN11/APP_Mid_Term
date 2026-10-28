@@ -1,4 +1,4 @@
-# Ứng dụng quản lý thư viện
+# APP_Mid_Term — Ứng dụng quản lý thư viện
 
 **Sinh viên:** Trần Ngọc Linh — **MSSV:** B23DCC097  
 **Lớp:** chưa được cung cấp.
